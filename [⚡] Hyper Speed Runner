@@ -1,0 +1,302 @@
+-- =========================
+--        LOAD WIND UI
+-- =========================
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+-- =========================
+-- KEY SYSTEM
+-- =========================
+local CorrectKey = "Thanakrit2010"
+local SavedInput = ""
+local Unlocked = false
+
+-- =========================
+-- CREATE WINDOW
+-- =========================
+local Window = WindUI:CreateWindow({
+    Title = "THANAKRIT HUB 😈",
+    Icon = "key",
+    Author = "By เสี๋ยคิวจัดให้ XD",
+    Folder = "MyHub",
+    Size = UDim2.fromOffset(580, 400),
+    Theme = "Dark"
+})
+
+-- =========================
+-- KEY TAB
+-- =========================
+local KeyTab = Window:Tab({ Title = "Key System", Icon = "key" })
+
+KeyTab:Input({
+    Title = "ใส่ Key",
+    Placeholder = "Enter key...",
+    Callback = function(text)
+        SavedInput = text
+    end
+})
+
+-- =========================
+-- SETTINGS TAB
+-- =========================
+local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+
+SettingsTab:Button({
+    Title = "รีเข้าแมพ",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId)
+    end
+})
+
+-- =========================
+-- LOAD MAIN
+-- =========================
+local function LoadMain()
+
+    local MainTab = Window:Tab({
+        Title = "AutoFarm",
+        Icon = "map-pin"
+    })
+
+    -- =========================
+    -- POINTS
+    -- =========================
+    local InstantPoints = {
+        Vector3.new(-1,11,-9075)
+    }
+
+    local SmoothPoints = {
+        Vector3.new(4,81,-224),
+        Vector3.new(-18,81,-8460),
+    }
+
+    -- DASH จุดใหม่
+    local DashStart = Vector3.new(4,81,-224)
+    local DashPoint = Vector3.new(-1,81,-9075)
+
+    local InstantRunning = false
+    local SmoothRunning = false
+    local DashRunning = false
+
+    local CurrentTween
+    local SPEED = 9999
+
+    -- FLOAT
+    local function ApplyFloat(hrp)
+        local old = hrp:FindFirstChild("AutoFloat")
+        if old then old:Destroy() end
+
+        local float = Instance.new("BodyVelocity")
+        float.Name = "AutoFloat"
+        float.MaxForce = Vector3.new(0,math.huge,0)
+        float.Parent = hrp
+    end
+
+    local function RemoveFloat(hrp)
+        local old = hrp:FindFirstChild("AutoFloat")
+        if old then old:Destroy() end
+    end
+
+    -- =========================
+    -- INSTANT LOOP
+    -- =========================
+    local function InstantLoop()
+
+        while InstantRunning do
+
+            local char = player.Character or player.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            RemoveFloat(hrp)
+
+            for _,pos in ipairs(InstantPoints) do
+                if not InstantRunning then return end
+                hrp.CFrame = CFrame.new(pos)
+                task.wait(0.3)
+            end
+
+        end
+    end
+
+    -- =========================
+    -- SMOOTH MOVE
+    -- =========================
+    local function SmoothMove(hrp,pos)
+
+        if CurrentTween then
+            CurrentTween:Cancel()
+        end
+
+        local distance = (hrp.Position-pos).Magnitude
+        local time = distance/SPEED
+
+        CurrentTween = TweenService:Create(
+            hrp,
+            TweenInfo.new(time,Enum.EasingStyle.Linear),
+            {CFrame = CFrame.new(pos)}
+        )
+
+        CurrentTween:Play()
+        CurrentTween.Completed:Wait()
+
+    end
+
+    -- =========================
+    -- SMOOTH LOOP
+    -- =========================
+    local function SmoothLoop()
+
+        while SmoothRunning do
+
+            local char = player.Character or player.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            ApplyFloat(hrp)
+
+            for _,pos in ipairs(SmoothPoints) do
+                if not SmoothRunning then return end
+                SmoothMove(hrp,pos)
+                task.wait(0.2)
+            end
+
+        end
+    end
+
+    -- =========================
+    -- DASH MOVE
+    -- =========================
+    local function DashMove(hrp,pos)
+
+        if CurrentTween then
+            CurrentTween:Cancel()
+        end
+
+        local distance = (hrp.Position - pos).Magnitude
+        local time = distance / SPEED
+
+        CurrentTween = TweenService:Create(
+            hrp,
+            TweenInfo.new(time,Enum.EasingStyle.Linear),
+            {CFrame = CFrame.new(pos)}
+        )
+
+        CurrentTween:Play()
+        CurrentTween.Completed:Wait()
+
+    end
+
+    -- =========================
+-- DASH LOOP
+-- =========================
+local function DashLoop()
+
+    while DashRunning do
+
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        -- ไปจุดแรก
+        DashMove(hrp, DashStart)
+
+        task.wait(0.1)
+
+        -- พุ่งไปจุดสุดท้าย
+        DashMove(hrp, DashPoint)
+
+        -- ปล่อยให้ตกพื้น แล้วรอ 2 วิ
+        RemoveFloat(hrp)
+        task.wait(2)
+
+    end
+
+end
+    -- =========================
+    -- TOGGLE INSTANT
+    -- =========================
+    MainTab:Toggle({
+        Title = "Instant Teleport",
+        Callback = function(state)
+
+            InstantRunning = state
+            SmoothRunning = false
+            DashRunning = false
+
+            if state then
+                task.spawn(InstantLoop)
+            end
+
+        end
+    })
+
+    -- =========================
+    -- TOGGLE SMOOTH
+    -- =========================
+    MainTab:Toggle({
+        Title = "Smooth Farm Loop",
+        Callback = function(state)
+
+            SmoothRunning = state
+            InstantRunning = false
+            DashRunning = false
+
+            if state then
+                task.spawn(SmoothLoop)
+            end
+
+        end
+    })
+
+    -- =========================
+    -- TOGGLE DASH LOOP
+    -- =========================
+    MainTab:Toggle({
+        Title = "Dash Loop",
+        Callback = function(state)
+
+            DashRunning = state
+            InstantRunning = false
+            SmoothRunning = false
+
+            if state then
+                task.spawn(DashLoop)
+            end
+
+        end
+    })
+
+end
+
+-- =========================
+-- KEY BUTTON
+-- =========================
+KeyTab:Button({
+    Title = "ยืนยันคีย์",
+    Callback = function()
+
+        if SavedInput == CorrectKey and not Unlocked then
+
+            Unlocked = true
+
+            WindUI:Notify({
+                Title = "สำเร็จ",
+                Description = "Key ถูกต้อง ✅",
+                Duration = 2
+            })
+
+            LoadMain()
+
+        else
+
+            WindUI:Notify({
+                Title = "ผิดพลาด",
+                Description = "Key ไม่ถูกต้อง ❌",
+                Duration = 3
+            })
+
+        end
+
+    end
+})
